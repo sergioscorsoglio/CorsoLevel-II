@@ -192,9 +192,9 @@ Process
 End message to the User
     [Documentation]  Tells the user the process is finished
     Add icon      Success
-    Add heading   The process of the purchase orders is finished. Good bye!
+    Add heading   The purchase orders are finished. Good bye!
     Add submit buttons    buttons=Ok
-    Show dialog
+    Run dialog  height=350    
 
 *** Keywords ***
 End Process
