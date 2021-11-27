@@ -24,10 +24,13 @@ ${DOWNLOAD_DIR}          ${CURDIR}${/}download
 ${TMP_DIR}               ${CURDIR}${/}temp-folder
 ${RECEIPT_DIR}           ${CURDIR}${/}output${/}receipt
 ${SCREENSHOT_DIR}        ${TMP_DIR}${/}screenshot  
+
 ${WEB_ORDER_URL}         https://--robotsparebinindustries.com/#robot-order
 ${ORDER_FILE_URL}        https://robotsparebinindustries.com/orders.csv
+
 ${ORDER_FILE_NAME}       orders.csv
 ${ORDER_FILE_FULL_PATH}  ${DOWNLOAD_DIR}${/}${ORDER_FILE_NAME}
+${OUTPUT_ZIP_FILE_FULL_PATH}  ${OUTPUT_DIR}${/}receipt.zip
 
 #    Set Global Variable  ${OUTPUT_DIR}  D:\sviluppo\Robocorp\CorsoLevel-II\output
 *** Keywords ***
@@ -186,7 +189,7 @@ Process
     FOR    ${order}    IN    @{orders_table}
         Run Keyword And Warn On Failure  Store receipt  ${order}
     END
-    Archive Folder With ZIP   ${RECEIPT_DIR}   ${OUTPUT_DIR}${/}receipt.zip   recursive=True
+    Archive Folder With ZIP   ${RECEIPT_DIR}   ${OUTPUT_ZIP_FILE_FULL_PATH}
 
 *** Keywords ***
 End message to the User
@@ -194,7 +197,9 @@ End message to the User
     Add icon      Success
     Add heading   The purchase orders are finished. Good bye!
     Add submit buttons    buttons=Ok
-    Run dialog  height=350    
+    Add text  Output Zip file:
+    ${files_trovati}  Add files  ${OUTPUT_ZIP_FILE_FULL_PATH}    
+    Run dialog  height=450    
 
 *** Keywords ***
 End Process
