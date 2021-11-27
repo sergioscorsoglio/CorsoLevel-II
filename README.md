@@ -1,13 +1,19 @@
-# Template: Standard Robot Framework
+# Orders robots from RobotSpareBin Industries Inc.
 
-Want to get started using [Robot Framework](https://robocorp.com/docs/languages-and-frameworks/robot-framework/basics) this is the simplest template to start from.
+This is my implementation of Robocorp Course level II exercise using the Standard Robot Framework template.
 
-This template robot:
+In this implementation the robot will create the following folder structure:
 
-- Uses [Robot Framework](https://robocorp.com/docs/languages-and-frameworks/robot-framework/basics) syntax.
-- Includes all the necessary dependencies and initialization commands (`conda.yaml`).
-- Provides a simple task template to start from (`tasks.robot`).
+- <project root> -
+                 |-download
+                 |-output-|
+                 |        |- receipt
+                 |-temp-folder-|
+                 |             |- screenshot
 
-## Learning materials
+Into that folders youll'find:
+- download: the order CSV file
+- output: the execution logs and the receipts zip file.
+- output/receipt: the PDF documents containing the receipts
+- temp-folder/screenshot: the robot screenshot
 
-- [All docs related to Robot Framework](https://robocorp.com/docs/languages-and-frameworks/robot-framework)
