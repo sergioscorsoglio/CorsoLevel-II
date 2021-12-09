@@ -17,6 +17,10 @@ Library    Screenshot
 Library    RPA.Tasks
 Library    OperatingSystem
 Library    Process
+Library    Collections
+Library    RPA.Cloud.AWS
+Library    RPA.JSON
+Library    String
 
 
 *** Variables ***
@@ -26,13 +30,10 @@ ${RECEIPT_DIR}           ${CURDIR}${/}output${/}receipt
 ${SCREENSHOT_DIR}        ${TMP_DIR}${/}screenshot  
 
 ${WEB_ORDER_URL}         https://--robotsparebinindustries.com/#robot-order
-${ORDER_FILE_URL}        https://robotsparebinindustries.com/orders.csv
-
 ${ORDER_FILE_NAME}       orders.csv
 ${ORDER_FILE_FULL_PATH}  ${DOWNLOAD_DIR}${/}${ORDER_FILE_NAME}
 ${OUTPUT_ZIP_FILE_FULL_PATH}  ${OUTPUT_DIR}${/}receipt.zip
 
-#    Set Global Variable  ${OUTPUT_DIR}  D:\sviluppo\Robocorp\CorsoLevel-II\output
 *** Keywords ***
 Create directory if it is missing
     [Documentation]  Create the input directoey if it not exist and log the action.
@@ -52,48 +53,71 @@ Create project folders
     Create directory if it is missing  ${RECEIPT_DIR}
     Create directory if it is missing  ${SCREENSHOT_DIR}
 
-*** Keywords ***
-Show Delete Dialog
-    [Documentation]  Show modal dialog to ask to the user if delete the previous outputs
-    Add icon      Warning
-    Add heading   Clear previous receipit?
-    Add submit buttons    buttons=No,Yes    default=No
-    Add text    WARNING: The output folder contains the previous elaboration output.
-    ${files_trovati}  Add files  ${RECEIPT_DIR}    
-    ${result}=    Run dialog  height=450    
-    [Return]  ${result.submit}
 
 *** Keywords ***
-Ask for delete previous the outputs
-    [Documentation]  Ask to the user if delete the previous outputs if exists
-    ${should_clear_io_folders}=  Set Variable  No
-    ${previous_receipt_count}=  Count Items In Directory    ${RECEIPT_DIR}
-    IF    ${previous_receipt_count} > 0
-        ${should_clear_io_folders}=  Show Delete Dialog
-    END
-    [Return]  ${should_clear_io_folders}
+Ask for local repository path
     
+    ${selectedFile}=  Set variable  ${Empty}
+    ${dialog_result}=  Set variable  ${Empty}
+    ${selected_file_count}=  Set variable  ${Empty}
+    FOR    ${counter}    IN RANGE    1    4        
+        Add heading    Select the order CSV file
+        IF    ${counter} > 1
+            Add icon    Warning
+            Add text  WARNING: Order file not selected !
+        END
+        Add file input    name
+        ${dialog_result}=    Run dialog  height=450      
+        ${selected_file_count}=  Get length  ${dialog_result}[name]
+        Log to console  ${selected_file_count}
+        Exit For Loop If  ${selected_file_count} > 0
+    END     
+    IF  ${selected_file_count} > 0
+      ${selectedFile}=  Set variable  ${dialog_result}[name][0]            
+    ELSE
+        Fail  No file selected from local repository
+    END
+    [Return]  ${selectedFile}
+
+*** Keywords ***
+Ask for CSV file location
+    [Documentation]  Show modal dialog to ask to the user if download the order CSV file or get it from local computer
+    
+    ${secret}=  Get Secret  orders_urls
+    ${dropdown_options}=    Convert To List  ${secret} 
+    Add heading   Select the orders repository
+    Add drop-down    name=download_url    options=@{dropdown_options}  default=official
+    ${dialog_location}=    Run dialog  height=450 
+
+    IF    "${dialog_location}[download_url]" == "local_repository"
+        ${dialog_local_repository}=  Ask for local repository path
+        ${result}=  Set variable  {"location":"${dialog_local_repository}", "local_repository":"TRUE"}
+    ELSE 
+        ${result}=  Set variable  { "location":"${secret}[${dialog_location}[download_url]]", "local_repository":"FALSE"}
+    END   
+    Log To Console    Selected CSV file location is: ${result}
+    ${result}=  Replace String  ${result}  \\  \\\\
+    Log To Console    Selected CSV file location is: ${result}
+    &{result_json}=  Convert String to JSON  ${result}
+    [Return]   &{result_json}
 
 *** Keywords ***
 Initialize
     [Documentation]  Initialize the process workflow
     Init Variables 
     Create project folders   
-    ${should_clear_io}  Ask for delete previous the outputs
-    IF    "${should_clear_io}" == "Yes"
-        Empty process i/o folders and files
-    END
+    Empty i/o folders and files
     Open the robot order website
 
 *** Keywords ***
 Init Variables
     [Documentation]  Initialize the process variables
-    ${secret}  Get Secret  robotsparebinindustries_ulrs
+    ${secret}  Get Secret  robotsparebinindustries_urls
     Set Global Variable  ${WEB_ORDER_URL}  ${secret}[home]/${secret}[order]
     Log  Web order url [${WEB_ORDER_URL}]
 
 *** Keywords ***
-Empty process i/o folders and files
+Empty i/o folders and files
     [Documentation]  Empty the input and output folders
     Empty Directory    ${DOWNLOAD_DIR}
     Empty Directory    ${RECEIPT_DIR}
@@ -109,17 +133,24 @@ Close popup
     Click Button  OK
 
 *** Keywords ***
-Get orders file
+Download orders file
     [Documentation]  Download the order file form the target URL and store it into the process download folder
-    Download  ${ORDER_FILE_URL}  ${ORDER_FILE_FULL_PATH}  overwrite=True
-    ${orders_file}=  Get File  ${ORDER_FILE_FULL_PATH}
-    [Return]  ${orders_file}
+    [Arguments]  ${order_file_url}
+    Download  ${order_file_url}  ${ORDER_FILE_FULL_PATH}  overwrite=True
+    [Return]  ${ORDER_FILE_FULL_PATH} 
 
 *** Keywords ***
-Get the orders from Excel file
+Get the orders from CSV file
     [Documentation]  Get the orders file and read the orders from CSV file
-    ${orders_file}  Get orders file
-    ${orders_table}=  Read table from CSV  ${ORDER_FILE_FULL_PATH}
+    [Arguments]  ${order_file_location_json}
+
+    ${orders_file}=  Set Variable   ${Empty}
+    IF    "${order_file_location_json.local_repository}" == "TRUE"
+        ${orders_file}=  Set Variable  ${order_file_location_json}[location]
+    ELSE
+        ${orders_file}  Download orders file  ${order_file_location_json}[location]
+    END
+    ${orders_table}=  Read table from CSV  ${orders_file}
     [Return]  ${orders_table}
 
 *** Keywords ***
@@ -157,8 +188,7 @@ Embed the robot screenshot to the receipt PDF file
     [Arguments]  ${screenshot}    ${receipt_pdf_filename}
     ${screenshot_as_list}=  Create List  ${screenshot}:align=center
     Add Files To Pdf  ${screenshot_as_list}  ${receipt_pdf_filename}  append=true
-    # Add Files To Pdf  ${screenshot}  ${receipt_pdf_filename}
-
+    
 *** Keywords ***
 Store receipt catch
     [Documentation]  Managing errors occurs while the process order. logs the error, the order number failed and go to next order starting point.
@@ -185,7 +215,8 @@ Store receipt
 *** Keywords ***
 Process
     [Documentation]  Loop over input orders to order the robots. If the order action fails, warns into the log and goes on
-    ${orders_table}  Get the orders from Excel file
+    ${order_file_location}  Ask for CSV file location
+    ${orders_table}  Get the orders from CSV file  ${order_file_location}
     FOR    ${order}    IN    @{orders_table}
         Run Keyword And Warn On Failure  Store receipt  ${order}
     END
@@ -209,7 +240,8 @@ End Process
 
 *** Tasks ***
 Main 
-    [Documentation]  Order robots from RobotSpareBin Industries Inc. Orders list is 
+    [Documentation]  Order robots from RobotSpareBin Industries Inc. Orders list is  
+    
     Initialize
     Process
     End Process

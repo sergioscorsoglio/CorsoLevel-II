@@ -1,7 +1,11 @@
 {
-    "robotsparebinindustries_ulrs": {
+    "robotsparebinindustries_urls": {
       "home": "https://robotsparebinindustries.com/#",
       "order": "robot-order"
+    },
+    "orders_urls": {
+      "official": "https://robotsparebinindustries.com/orders.csv",
+      "local_repository": "FILE_NOT_SELECTED"
     }
 }
   
