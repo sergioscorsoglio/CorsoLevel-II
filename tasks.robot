@@ -34,7 +34,7 @@ ${ORDER_FILE_NAME}       orders.csv
 ${ORDER_FILE_FULL_PATH}  ${DOWNLOAD_DIR}${/}${ORDER_FILE_NAME}
 ${OUTPUT_ZIP_FILE_FULL_PATH}  ${OUTPUT_DIR}${/}receipt.zip
 
-${GLOBAL_RETRY_AMOUNT}=    3x
+${GLOBAL_RETRY_AMOUNT}=    10x  # ... um it seems to be a big number of retries for a production robot
 ${GLOBAL_RETRY_INTERVAL}=    0.5s
 
 *** Keywords ***
