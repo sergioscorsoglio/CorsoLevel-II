@@ -218,7 +218,8 @@ Process
     ${order_file_location}  Ask for CSV file location
     ${orders_table}  Get the orders from CSV file  ${order_file_location}
     FOR    ${order}    IN    @{orders_table}
-        Run Keyword And Warn On Failure  Store receipt  ${order}
+        # Run Keyword And Warn On Failure  Store receipt  ${order}
+        Wait Until Keyword Succeeds  2 min  1 sec  Store receipt  ${order}
     END
     Archive Folder With ZIP   ${RECEIPT_DIR}   ${OUTPUT_ZIP_FILE_FULL_PATH}
 
@@ -235,7 +236,7 @@ End message to the User
 *** Keywords ***
 End Process
     [Documentation]  Do the elaboration end process actions
-    Close All Browsers
+     Close All Browsers
     End message to the User
 
 *** Tasks ***
