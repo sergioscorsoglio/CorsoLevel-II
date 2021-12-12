@@ -34,6 +34,9 @@ ${ORDER_FILE_NAME}       orders.csv
 ${ORDER_FILE_FULL_PATH}  ${DOWNLOAD_DIR}${/}${ORDER_FILE_NAME}
 ${OUTPUT_ZIP_FILE_FULL_PATH}  ${OUTPUT_DIR}${/}receipt.zip
 
+${GLOBAL_RETRY_AMOUNT}=    3x
+${GLOBAL_RETRY_INTERVAL}=    0.5s
+
 *** Keywords ***
 Create directory if it is missing
     [Documentation]  Create the input directoey if it not exist and log the action.
@@ -219,7 +222,10 @@ Process
     ${orders_table}  Get the orders from CSV file  ${order_file_location}
     FOR    ${order}    IN    @{orders_table}
         # Run Keyword And Warn On Failure  Store receipt  ${order}
-        Wait Until Keyword Succeeds  2 min  1 sec  Store receipt  ${order}
+         Wait Until Keyword Succeeds
+    ...    ${GLOBAL_RETRY_AMOUNT}
+    ...    ${GLOBAL_RETRY_INTERVAL}
+    ...    Store receipt  ${order}
     END
     Archive Folder With ZIP   ${RECEIPT_DIR}   ${OUTPUT_ZIP_FILE_FULL_PATH}
 
